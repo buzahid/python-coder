@@ -79,9 +79,7 @@ body {
 
 .app-shell {
     min-height: 100%;
-    max-width: 1200px;
     margin: 0 auto;
-    padding: 12px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -321,6 +319,7 @@ button:focus-visible {
 }
 
 .pane-splitter {
+    height: 5px;
     border-radius: 999px;
     border: 1px solid var(--accent-strong);
     background: var(--accent);
@@ -429,7 +428,7 @@ body.dark-theme .modal-card:focus-visible {
 .panel {
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: 5px;
     box-shadow: var(--shadow);
     min-height: 0;
     display: flex;
@@ -438,7 +437,7 @@ body.dark-theme .modal-card:focus-visible {
 
 .panel-header {
     border-bottom: 1px solid var(--line);
-    padding: 10px 14px;
+    padding: 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -447,7 +446,7 @@ body.dark-theme .modal-card:focus-visible {
 
 .panel-header h2 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 1.4rem;
 }
 
 .panel-header span {
@@ -493,7 +492,7 @@ body.dark-theme .modal-card:focus-visible {
 }
 
 #terminal-container {
-    padding: 0;
+    padding: 24px;
     display: flex;
     flex-direction: column;
     min-height: 0;
