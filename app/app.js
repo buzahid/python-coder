@@ -682,6 +682,28 @@ function applyDarkEditorTheme() {
                 }
                 .cm-panels { background-color: #252526 !important; color: #d4d4d4 !important; }
                 .cm-searchMatch { background-color: #613214 !important; outline: 1px solid #f38518 !important; }
+                .cm-tooltip {
+                    background-color: #252526 !important;
+                    border: 1px solid #3c3c3c !important;
+                    color: #d4d4d4 !important;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+                }
+                .cm-tooltip-autocomplete > ul > li {
+                    color: #d4d4d4 !important;
+                    padding: 2px 8px !important;
+                }
+                .cm-tooltip-autocomplete > ul > li[aria-selected="true"],
+                .cm-tooltip-autocomplete > ul > li:hover {
+                    background-color: #264f78 !important;
+                    color: #ffffff !important;
+                }
+                .cm-completionLabel { color: inherit !important; }
+                .cm-completionDetail { color: #919191 !important; font-style: italic; }
+                .cm-completionMatchedText {
+                    color: #18a3ff !important;
+                    text-decoration: none !important;
+                    font-weight: 700 !important;
+                }
             `;
             root.appendChild(styleEl);
         }
