@@ -603,7 +603,7 @@ function patchEditorHighlightColors(shadowRoot) {
     }
 
     if (overrides.length === 0) {
-        return;
+        return false;
     }
 
     const styleId = "model-coder-syntax-colors";
@@ -614,6 +614,7 @@ function patchEditorHighlightColors(shadowRoot) {
         shadowRoot.appendChild(styleEl);
     }
     styleEl.textContent = overrides.join("\n");
+    return true;
 }
 
 function applyDarkEditorTheme() {
@@ -671,16 +672,19 @@ function applyDarkEditorTheme() {
             root.appendChild(styleEl);
         }
         // Re-run on every call so newly injected CM6 highlight rules are caught.
-        patchEditorHighlightColors(root);
+        if (patchEditorHighlightColors(root)) {
+            return true;
+        }
     }
+    return false;
 }
 
 function queueDarkEditorThemeApply() {
     let attempts = 0;
     const timer = setInterval(() => {
         attempts += 1;
-        applyDarkEditorTheme();
-        if (getEditor()?.shadowRoot || attempts >= 20) {
+        const patched = applyDarkEditorTheme();
+        if (patched || attempts >= 20) {
             clearInterval(timer);
         }
     }, 150);

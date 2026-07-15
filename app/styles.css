@@ -204,11 +204,10 @@ button:not(:disabled):active {
 .dropdown-heading {
     margin: 0 0 4px;
     padding: 4px 8px 8px;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--ink-muted);
+    font-family: sans-serif;
+    color: #6e6e6e;
     border-bottom: 1px solid var(--line);
 }
 
