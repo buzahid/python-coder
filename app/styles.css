@@ -292,31 +292,14 @@ button:focus-visible {
 }
 
 .pane-splitter {
-    /* No explicit height — stretches to fill the 12px grid track, giving a
-       full 12px clickable area while showing only a 3px visual bar. */
-    border: none;
-    background: transparent;
-    box-shadow: none;
-    border-radius: 0;
-    cursor: row-resize;
-    touch-action: none;
-    user-select: none;
-    position: relative;
-}
-
-.pane-splitter::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
     height: 3px;
     border-radius: 999px;
     border: 1px solid var(--accent-strong);
     background: var(--accent);
     box-shadow: var(--shadow);
-    pointer-events: none;
+    cursor: row-resize;
+    touch-action: none;
+    user-select: none;
 }
 
 .pane-splitter:focus,
