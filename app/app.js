@@ -65,6 +65,93 @@ print(f"Hello, {name}!")
 age = input("How old are you? ")
 print(f"You are {age} years old.")
 `,
+    "math-and-types": String.raw`# Math operations and type conversion
+
+# --- Basic arithmetic ---
+a = 15
+b = 4
+
+print("Addition:      ", a + b)
+print("Subtraction:   ", a - b)
+print("Multiplication:", a * b)
+print("Division:      ", a / b)   # always returns a float
+print("Floor division:", a // b)  # rounds down to nearest integer
+print("Remainder:     ", a % b)   # modulus (remainder after division)
+print("Exponent:      ", a ** b)  # a raised to the power of b
+
+# --- Working with floats ---
+print()
+price = 9.99
+quantity = 3
+total = price * quantity
+print(f"Unit price:  ${price}")
+print(f"Quantity:    {quantity}")
+print(f"Total:       ${total}")
+
+# --- Converting between types ---
+print()
+raw = "42"
+as_int = int(raw)        # string  → integer
+as_float = float(raw)    # string  → float
+back_to_str = str(as_int)  # integer → string
+
+print("Original string: ", raw,        type(raw))
+print("As integer:      ", as_int,     type(as_int))
+print("As float:        ", as_float,   type(as_float))
+print("Back to string:  ", back_to_str, type(back_to_str))
+
+# --- Rounding ---
+print()
+pi = 3.14159265
+print("pi =", pi)
+print("Rounded to 2 dp:  ", round(pi, 2))
+print("Rounded to 0 dp:  ", round(pi))
+print("int() truncates:  ", int(pi))   # drops everything after decimal point
+`,
+    "loops-and-decisions": String.raw`# Loops and decisions
+
+# --- if / elif / else ---
+score = 78
+print("Score:", score)
+
+if score >= 90:
+    grade = "A"
+elif score >= 80:
+    grade = "B"
+elif score >= 70:
+    grade = "C"
+elif score >= 60:
+    grade = "D"
+else:
+    grade = "F"
+
+print("Grade:", grade)
+
+# --- for loop with range() ---
+print()
+print("Numbers 1 to 10:")
+for number in range(1, 11):
+    print(number, end=" ")
+print()
+
+# --- for loop with if / else inside ---
+print()
+print("Odd and even (1 –20):")
+for number in range(1, 21):
+    if number % 2 == 0:
+        print(f"{number:>2} is even")
+    else:
+        print(f"{number:>2} is odd")
+
+# --- while loop with a condition ---
+print()
+print("Countdown:")
+countdown = 5
+while countdown > 0:
+    print(countdown)
+    countdown -= 1
+print("Go!")
+`,
     "numpy-demo": String.raw`# NumPy array operations
 import numpy as np
 
