@@ -430,6 +430,7 @@ function launchTerminalScript(scriptCode, runId) {
 
     document.body.appendChild(runner);
     queueTerminalResizeSync();
+    queueTerminalFontSize();
 }
 
 function stopActiveRun(message = "Run stopped. You can load another template or run code again.") {
@@ -562,6 +563,59 @@ function initializeEditorEmpty() {
     savedIndicator.textContent = "Editor empty. Pick a template or start typing.";
 }
 
+// Maps CM6 defaultHighlightStyle colors (designed for white backgrounds) to
+// bright alternatives that are readable on the dark #1e1e1e editor background.
+// CM6 stores colors in rgb() format in the injected CSSStyleSheet rules.
+const HIGHLIGHT_COLOR_MAP = new Map([
+    ["rgb(119, 0, 136)", "#c586c0"],    // #708  keyword          → bright purple
+    ["rgb(170, 17, 17)", "#ce9178"],    // #a11  string/deleted   → salmon
+    ["rgb(17, 102, 68)",  "#b5cea8"],   // #164  number/literal   → light green
+    ["rgb(153, 68, 0)",   "#6a9955"],   // #940  comment          → muted green
+    ["rgb(0, 136, 85)",   "#4ec9b0"],   // #085  typeName         → teal
+    ["rgb(0, 0, 255)",    "#9cdcfe"],   // #00f  variableName     → light blue
+    ["rgb(34, 17, 153)",  "#569cd6"],   // #219  bool/atom/url    → blue
+    ["rgb(238, 68, 0)",   "#d7ba7d"],   // #e40  regexp/escape    → gold
+    ["rgb(51, 0, 170)",   "#9cdcfe"],   // #30a  local variable   → light blue
+    ["rgb(17, 102, 119)", "#4ec9b0"],   // #167  className        → teal
+    ["rgb(34, 85, 102)",  "#9cdcfe"],   // #256  macroName        → light blue
+    ["rgb(0, 0, 204)",    "#9cdcfe"],   // #00c  propertyName def → light blue
+    ["rgb(51, 187, 51)",  "#b5cea8"],   // #3b3  function name    → light green
+    ["rgb(255, 0, 0)",    "#f44747"],   // #f00  invalid          → bright red
+    ["rgb(0, 0, 0)",      "#d4d4d4"],   // black operator/punct  → base text
+]);
+
+function patchEditorHighlightColors(shadowRoot) {
+    const overrides = [];
+    for (const sheet of shadowRoot.styleSheets) {
+        try {
+            for (const rule of sheet.cssRules) {
+                if (!(rule instanceof CSSStyleRule)) {
+                    continue;
+                }
+                const newColor = HIGHLIGHT_COLOR_MAP.get(rule.style.color);
+                if (newColor) {
+                    overrides.push(`${rule.selectorText} { color: ${newColor} !important; }`);
+                }
+            }
+        } catch (_e) {
+            // Sheet may be cross-origin or otherwise inaccessible.
+        }
+    }
+
+    if (overrides.length === 0) {
+        return;
+    }
+
+    const styleId = "model-coder-syntax-colors";
+    let styleEl = shadowRoot.getElementById(styleId);
+    if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = styleId;
+        shadowRoot.appendChild(styleEl);
+    }
+    styleEl.textContent = overrides.join("\n");
+}
+
 function applyDarkEditorTheme() {
     const editor = getEditor();
     if (!editor) {
@@ -587,35 +641,37 @@ function applyDarkEditorTheme() {
     }
 
     for (const root of roots) {
-        if (root.getElementById(styleId)) {
-            continue;
+        if (!root.getElementById(styleId)) {
+            const styleEl = document.createElement("style");
+            styleEl.id = styleId;
+            styleEl.textContent = `
+                .cm-editor, .cm-scroller, .cm-content, .cm-gutters {
+                    background-color: #1e1e1e !important;
+                    color: #d4d4d4 !important;
+                    font-size: 16px !important;
+                }
+                .cm-content { caret-color: #aeafad !important; }
+                .cm-gutters {
+                    background-color: #252526 !important;
+                    color: #919191 !important;
+                    border-right: 1px solid #3c3c3c !important;
+                }
+                .cm-activeLine, .cm-activeLineGutter { background-color: #2a2d2e !important; }
+                .cm-cursor, .cm-dropCursor { border-left-color: #aeafad !important; }
+                .cm-selectionBackground,
+                .cm-selectionLayer .cm-selectionBackground { background-color: rgba(38, 79, 120, 0.7) !important; }
+                .cm-focused .cm-selectionBackground { background-color: #264f78 !important; }
+                .cm-editor ::selection, .cm-editor *::selection {
+                    background-color: #264f78 !important;
+                    color: #d4d4d4 !important;
+                }
+                .cm-panels { background-color: #252526 !important; color: #d4d4d4 !important; }
+                .cm-searchMatch { background-color: #613214 !important; outline: 1px solid #f38518 !important; }
+            `;
+            root.appendChild(styleEl);
         }
-        const styleEl = document.createElement("style");
-        styleEl.id = styleId;
-        styleEl.textContent = `
-            .cm-editor, .cm-scroller, .cm-content, .cm-gutters {
-                background-color: #1e1e1e !important;
-                color: #d4d4d4 !important;
-            }
-            .cm-content { caret-color: #aeafad !important; }
-            .cm-gutters {
-                background-color: #252526 !important;
-                color: #919191 !important;
-                border-right: 1px solid #3c3c3c !important;
-            }
-            .cm-activeLine, .cm-activeLineGutter { background-color: #2a2d2e !important; }
-            .cm-cursor, .cm-dropCursor { border-left-color: #aeafad !important; }
-            .cm-selectionBackground,
-            .cm-selectionLayer .cm-selectionBackground { background-color: rgba(38, 79, 120, 0.7) !important; }
-            .cm-focused .cm-selectionBackground { background-color: #264f78 !important; }
-            .cm-editor ::selection, .cm-editor *::selection {
-                background-color: #264f78 !important;
-                color: #d4d4d4 !important;
-            }
-            .cm-panels { background-color: #252526 !important; color: #d4d4d4 !important; }
-            .cm-searchMatch { background-color: #613214 !important; outline: 1px solid #f38518 !important; }
-        `;
-        root.appendChild(styleEl);
+        // Re-run on every call so newly injected CM6 highlight rules are caught.
+        patchEditorHighlightColors(root);
     }
 }
 
@@ -628,6 +684,33 @@ function queueDarkEditorThemeApply() {
             clearInterval(timer);
         }
     }, 150);
+}
+
+function applyTerminalFontSize(size = 15) {
+    const terminal = getActiveTerminalInstance();
+    if (!terminal) {
+        return false;
+    }
+    try {
+        terminal.options.fontSize = size;
+        if (typeof terminal.refresh === "function") {
+            terminal.refresh(0, Math.max(0, (terminal.rows || 24) - 1));
+        }
+        requestTerminalResizeSync();
+    } catch (_err) {
+        // Ignore — terminal may not support dynamic font resizing.
+    }
+    return true;
+}
+
+function queueTerminalFontSize() {
+    let attempts = 0;
+    const timer = setInterval(() => {
+        attempts += 1;
+        if (applyTerminalFontSize() || attempts >= 30) {
+            clearInterval(timer);
+        }
+    }, 200);
 }
 
 function markRuntimeReady() {
