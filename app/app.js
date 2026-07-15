@@ -1,18 +1,10 @@
-const statusRuntime = document.getElementById("runtime-status");
 const runBtn = document.getElementById("run-btn");
-const stopBtn = document.getElementById("stop-btn");
-const themeBtn = document.getElementById("theme-btn");
-const aboutBtn = document.getElementById("about-btn");
+const examplesBtn = document.getElementById("examples-btn");
+const examplesDropdown = document.getElementById("examples-dropdown");
 const savedIndicator = document.getElementById("saved-indicator");
-const templateSelect = document.getElementById("template-select");
-const resetLayoutBtn = document.getElementById("reset-layout-btn");
 const paneSplitter = document.getElementById("pane-splitter");
 const workspace = document.querySelector(".workspace");
 const topbarControls = document.querySelector(".topbar-controls");
-const aboutModalBackdrop = document.getElementById("about-modal-backdrop");
-const aboutModal = document.getElementById("about-modal");
-const aboutCloseBtn = document.getElementById("about-close-btn");
-const THEME_STORAGE_KEY = "model-coder-theme";
 const HOSTNAME = String(window.location.hostname || "").toLowerCase();
 const IS_GITHUB_PAGES = HOSTNAME === "github.io" || HOSTNAME.endsWith(".github.io");
 
@@ -114,244 +106,13 @@ const state = {
     running: false,
     sessionActive: false,
     runtimeInitialized: false,
-    darkTheme: false,
     savedCode: "",
-    selectedTemplate: templateSelect?.value || "",
+    selectedTemplate: "",
     activeRunId: 0,
-    aboutReturnFocus: null,
     switchingTemplate: false,
 };
 
 let terminalResizeRafId = 0;
-
-function openAboutModal() {
-    if (!aboutModalBackdrop || !aboutModal) {
-        return;
-    }
-
-    state.aboutReturnFocus = document.activeElement;
-    aboutModalBackdrop.hidden = false;
-    document.body.style.overflow = "hidden";
-    aboutModal.focus();
-}
-
-function closeAboutModal() {
-    if (!aboutModalBackdrop) {
-        return;
-    }
-
-    aboutModalBackdrop.hidden = true;
-    document.body.style.overflow = "";
-
-    if (state.aboutReturnFocus && typeof state.aboutReturnFocus.focus === "function") {
-        state.aboutReturnFocus.focus();
-    } else if (aboutBtn) {
-        aboutBtn.focus();
-    }
-
-    state.aboutReturnFocus = null;
-}
-
-function initializeAboutModal() {
-    if (!aboutBtn || !aboutModalBackdrop || !aboutModal) {
-        return;
-    }
-
-    aboutBtn.addEventListener("click", openAboutModal);
-
-    if (aboutCloseBtn) {
-        aboutCloseBtn.addEventListener("click", closeAboutModal);
-    }
-
-    aboutModalBackdrop.addEventListener("click", (event) => {
-        if (event.target === aboutModalBackdrop) {
-            closeAboutModal();
-        }
-    });
-
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !aboutModalBackdrop.hidden) {
-            event.preventDefault();
-            closeAboutModal();
-        }
-    });
-}
-
-function applyTheme(isDark) {
-    state.darkTheme = Boolean(isDark);
-    document.body.classList.toggle("dark-theme", state.darkTheme);
-
-    if (themeBtn) {
-        themeBtn.setAttribute("aria-pressed", state.darkTheme ? "true" : "false");
-        themeBtn.classList.toggle("active", state.darkTheme);
-    }
-
-    try {
-        localStorage.setItem(THEME_STORAGE_KEY, state.darkTheme ? "dark" : "light");
-    } catch (_error) {
-        // Ignore storage failures and continue using in-memory theme state.
-    }
-
-    applyEmbeddedEditorTheme();
-}
-
-function toggleTheme() {
-    applyTheme(!state.darkTheme);
-}
-
-function getSavedThemePreference() {
-    try {
-        return localStorage.getItem(THEME_STORAGE_KEY);
-    } catch (_error) {
-        return null;
-    }
-}
-
-function applyEmbeddedEditorTheme() {
-    const editor = getEditor();
-    if (!editor) {
-        return;
-    }
-
-    editor.setAttribute("data-theme", state.darkTheme ? "dark" : "light");
-    editor.style.backgroundColor = "";
-    editor.style.color = "";
-
-    const container = document.getElementById("editor-container");
-    const styleId = "model-coder-embedded-theme";
-    const roots = [];
-
-    if (editor?.shadowRoot) {
-        roots.push(editor.shadowRoot);
-    }
-
-    if (container) {
-        for (const node of container.querySelectorAll("*")) {
-            if (!node.shadowRoot) {
-                continue;
-            }
-            if (node.shadowRoot.querySelector(".cm-editor")) {
-                roots.push(node.shadowRoot);
-            }
-        }
-    }
-
-    if (roots.length === 0) {
-        return;
-    }
-
-    for (const root of roots) {
-        let styleEl = root.getElementById(styleId);
-        if (!styleEl) {
-            styleEl = document.createElement("style");
-            styleEl.id = styleId;
-            root.appendChild(styleEl);
-        }
-
-        if (!state.darkTheme) {
-            styleEl.textContent = "";
-            continue;
-        }
-
-        // Third-party fix: One Dark-inspired theme from @codemirror/theme-one-dark.
-        styleEl.textContent = `
-        .cm-editor,
-        .cm-scroller,
-        .cm-content,
-        .cm-gutters {
-            background-color: #282c34 !important;
-            color: #abb2bf !important;
-        }
-
-        .cm-content {
-            caret-color: #528bff !important;
-        }
-
-        .cm-gutters {
-            background-color: #282c34 !important;
-            color: #7d8799 !important;
-            border: none !important;
-        }
-
-        .cm-panels {
-            background-color: #21252b !important;
-            color: #abb2bf !important;
-        }
-
-        .cm-panels.cm-panels-top {
-            border-bottom: 2px solid #000 !important;
-        }
-
-        .cm-panels.cm-panels-bottom {
-            border-top: 2px solid #000 !important;
-        }
-
-        .cm-editor .cm-cursor,
-        .cm-editor .cm-dropCursor {
-            border-left-color: #528bff !important;
-        }
-
-        .cm-editor .cm-activeLine,
-        .cm-editor .cm-activeLineGutter {
-            background-color: #2c313a !important;
-        }
-
-        .cm-editor .cm-selectionMatch {
-            background-color: #aafe661a !important;
-        }
-
-        /* Keep selection styling explicit and centralized to avoid override conflicts. */
-        .cm-editor .cm-selectionLayer {
-            z-index: 2 !important;
-            mix-blend-mode: normal !important;
-        }
-
-        .cm-editor .cm-selectionLayer .cm-selectionBackground,
-        .cm-editor .cm-selectionBackground {
-            background-color: rgba(82, 139, 255, 0.42) !important;
-        }
-
-        .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
-        .cm-editor.cm-focused .cm-selectionBackground {
-            background-color: rgba(82, 139, 255, 0.62) !important;
-            outline: 1px solid rgba(173, 204, 255, 0.7) !important;
-        }
-
-        .cm-editor ::selection,
-        .cm-editor *::selection,
-        .cm-editor .cm-content::selection,
-        .cm-editor .cm-line::selection {
-            background-color: rgba(82, 139, 255, 0.62) !important;
-            color: #f0f6fc !important;
-        }
-
-        .cm-editor .cm-searchMatch {
-            background-color: #72a1ff59 !important;
-            outline: 1px solid #457dff !important;
-        }
-        `;
-    }
-}
-
-function queueEmbeddedEditorThemeSync() {
-    let attempts = 0;
-    const maxAttempts = 20;
-    const timer = setInterval(() => {
-        attempts += 1;
-        applyEmbeddedEditorTheme();
-        if (getEditor()?.shadowRoot || attempts >= maxAttempts) {
-            clearInterval(timer);
-        }
-    }, 150);
-}
-
-function setPill(el, text, mode = "") {
-    el.textContent = text;
-    el.classList.remove("ready", "error");
-    if (mode) {
-        el.classList.add(mode);
-    }
-}
 
 function isAppReady() {
     return state.pyReady && state.terminalReady;
@@ -360,20 +121,8 @@ function isAppReady() {
 function updateRunState() {
     const appReady = isAppReady();
 
-    if (templateSelect) {
-        templateSelect.disabled = !appReady || state.switchingTemplate;
-    }
-
-    if (resetLayoutBtn) {
-        resetLayoutBtn.disabled = !appReady;
-    }
-
-    if (themeBtn) {
-        themeBtn.disabled = !appReady;
-    }
-
-    if (aboutBtn) {
-        aboutBtn.disabled = !appReady;
+    if (examplesBtn) {
+        examplesBtn.disabled = !appReady || state.switchingTemplate;
     }
 
     if (topbarControls) {
@@ -392,9 +141,6 @@ function updateRunState() {
     }
 
     runBtn.disabled = !appReady || state.running || state.sessionActive || state.switchingTemplate;
-    if (stopBtn) {
-        stopBtn.disabled = !(state.sessionActive || state.running);
-    }
 }
 
 function getEditor() {
@@ -778,12 +524,8 @@ function readEditorCode() {
     return String(editor.textContent || "");
 }
 
-async function loadSelectedTemplate() {
-    if (!templateSelect) {
-        return;
-    }
-
-    const selected = templateSelect.value;
+async function loadSelectedTemplate(templateKey) {
+    const selected = templateKey;
     if (!(selected in TEMPLATE_SNIPPETS)) {
         return;
     }
@@ -820,6 +562,74 @@ function initializeEditorEmpty() {
     savedIndicator.textContent = "Editor empty. Pick a template or start typing.";
 }
 
+function applyDarkEditorTheme() {
+    const editor = getEditor();
+    if (!editor) {
+        return;
+    }
+
+    editor.setAttribute("data-theme", "dark");
+
+    const container = document.getElementById("editor-container");
+    const styleId = "model-coder-dark-theme";
+    const roots = [];
+
+    if (editor.shadowRoot) {
+        roots.push(editor.shadowRoot);
+    }
+
+    if (container) {
+        for (const node of container.querySelectorAll("*")) {
+            if (node.shadowRoot?.querySelector(".cm-editor")) {
+                roots.push(node.shadowRoot);
+            }
+        }
+    }
+
+    for (const root of roots) {
+        if (root.getElementById(styleId)) {
+            continue;
+        }
+        const styleEl = document.createElement("style");
+        styleEl.id = styleId;
+        styleEl.textContent = `
+            .cm-editor, .cm-scroller, .cm-content, .cm-gutters {
+                background-color: #1e1e1e !important;
+                color: #d4d4d4 !important;
+            }
+            .cm-content { caret-color: #aeafad !important; }
+            .cm-gutters {
+                background-color: #252526 !important;
+                color: #919191 !important;
+                border-right: 1px solid #3c3c3c !important;
+            }
+            .cm-activeLine, .cm-activeLineGutter { background-color: #2a2d2e !important; }
+            .cm-cursor, .cm-dropCursor { border-left-color: #aeafad !important; }
+            .cm-selectionBackground,
+            .cm-selectionLayer .cm-selectionBackground { background-color: rgba(38, 79, 120, 0.7) !important; }
+            .cm-focused .cm-selectionBackground { background-color: #264f78 !important; }
+            .cm-editor ::selection, .cm-editor *::selection {
+                background-color: #264f78 !important;
+                color: #d4d4d4 !important;
+            }
+            .cm-panels { background-color: #252526 !important; color: #d4d4d4 !important; }
+            .cm-searchMatch { background-color: #613214 !important; outline: 1px solid #f38518 !important; }
+        `;
+        root.appendChild(styleEl);
+    }
+}
+
+function queueDarkEditorThemeApply() {
+    let attempts = 0;
+    const timer = setInterval(() => {
+        attempts += 1;
+        applyDarkEditorTheme();
+        if (getEditor()?.shadowRoot || attempts >= 20) {
+            clearInterval(timer);
+        }
+    }, 150);
+}
+
 function markRuntimeReady() {
     if (state.runtimeInitialized) {
         return;
@@ -828,12 +638,10 @@ function markRuntimeReady() {
     state.runtimeInitialized = true;
     state.pyReady = true;
     state.terminalReady = true;
-    const runtimeMode = shouldUseTerminalWorker() ? "worker" : "main-thread";
-    setPill(statusRuntime, `PyScript runtime ready (${runtimeMode})`, "ready");
     setupEditorAsEditOnly();
     suppressNativeEditorRunButton();
     enableEditorEscapeToTabOut();
-    queueEmbeddedEditorThemeSync();
+    queueDarkEditorThemeApply();
     initializeEditorEmpty();
     updateRunState();
 }
@@ -1036,23 +844,15 @@ async function runCurrentCode() {
 }
 
 async function initializeApp() {
-    setPill(statusRuntime, "PyScript loading...");
     updateRunState();
 
-    setPill(statusRuntime, "Waiting for cross-origin isolation...");
     const coiReady = await waitForCrossOriginIsolation();
     if (!coiReady) {
-        setPill(
-            statusRuntime,
-            "Cross-origin isolation unavailable. Reload the page; if that fails, try a normal (non-private) browser window.",
-            "error"
-        );
         if (runBtn) {
             runBtn.disabled = true;
         }
         return;
     }
-    setPill(statusRuntime, "PyScript loading...");
 
     window.modelCoderMarkRunComplete = (runId) => {
         const parsedRunId = Number(runId);
@@ -1061,33 +861,37 @@ async function initializeApp() {
 
     syncActiveRunId();
 
-    const savedTheme = getSavedThemePreference();
-    applyTheme(savedTheme === "dark");
-
     initializePaneSplitter();
     window.addEventListener("resize", requestTerminalResizeSync);
 
     window.addEventListener("py:ready", markRuntimeReady, { once: true });
 
     runBtn.addEventListener("click", runCurrentCode);
-    if (stopBtn) {
-        stopBtn.addEventListener("click", () => {
-            stopActiveRun();
-        });
-    }
-    if (templateSelect) {
-        templateSelect.addEventListener("change", () => {
-            void loadSelectedTemplate();
-        });
-    }
-    if (resetLayoutBtn) {
-        resetLayoutBtn.addEventListener("click", resetPaneSizes);
-    }
-    if (themeBtn) {
-        themeBtn.addEventListener("click", toggleTheme);
-    }
 
-    initializeAboutModal();
+    if (examplesBtn && examplesDropdown) {
+        examplesBtn.addEventListener("click", () => {
+            const isOpen = !examplesDropdown.hidden;
+            examplesDropdown.hidden = isOpen;
+            examplesBtn.setAttribute("aria-expanded", String(!isOpen));
+        });
+
+        examplesDropdown.addEventListener("click", (event) => {
+            const item = event.target.closest("[data-template]");
+            if (!item) {
+                return;
+            }
+            examplesDropdown.hidden = true;
+            examplesBtn.setAttribute("aria-expanded", "false");
+            void loadSelectedTemplate(item.dataset.template);
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!examplesDropdown.hidden && !examplesBtn.contains(event.target) && !examplesDropdown.contains(event.target)) {
+                examplesDropdown.hidden = true;
+                examplesBtn.setAttribute("aria-expanded", "false");
+            }
+        });
+    }
 
     const pyReadyFallback = setInterval(() => {
         const editor = getEditor();
@@ -1101,7 +905,6 @@ async function initializeApp() {
 }
 
 initializeApp().catch((error) => {
-    setPill(statusRuntime, `Startup failed: ${error.message}`, "error");
     console.error(error);
 });
 
