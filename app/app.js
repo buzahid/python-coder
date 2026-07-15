@@ -585,14 +585,28 @@ const HIGHLIGHT_COLOR_MAP = new Map([
 ]);
 
 function patchEditorHighlightColors(shadowRoot) {
+    // Normalize to handle browser serialization differences:
+    // "rgb(170, 17, 17)" vs "rgb(170,17,17)" vs "rgb(170,  17,  17)"
+    const normalize = (s) => s.replace(/\s+/g, "").toLowerCase();
+    const normalizedMap = new Map(
+        [...HIGHLIGHT_COLOR_MAP.entries()].map(([k, v]) => [normalize(k), v])
+    );
+
+    // Collect all sheets — shadowRoot.styleSheets may not always include
+    // adoptedStyleSheets in all browsers, so check both explicitly.
+    const sheets = new Set(shadowRoot.styleSheets);
+    for (const sheet of (shadowRoot.adoptedStyleSheets ?? [])) {
+        sheets.add(sheet);
+    }
+
     const overrides = [];
-    for (const sheet of shadowRoot.styleSheets) {
+    for (const sheet of sheets) {
         try {
             for (const rule of sheet.cssRules) {
                 if (!(rule instanceof CSSStyleRule)) {
                     continue;
                 }
-                const newColor = HIGHLIGHT_COLOR_MAP.get(rule.style.color);
+                const newColor = normalizedMap.get(normalize(rule.style.color));
                 if (newColor) {
                     overrides.push(`${rule.selectorText} { color: ${newColor} !important; }`);
                 }
@@ -683,8 +697,8 @@ function queueDarkEditorThemeApply() {
     let attempts = 0;
     const timer = setInterval(() => {
         attempts += 1;
-        const patched = applyDarkEditorTheme();
-        if (patched || attempts >= 20) {
+        applyDarkEditorTheme();
+        if (attempts >= 20) {
             clearInterval(timer);
         }
     }, 150);
