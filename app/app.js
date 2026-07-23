@@ -79,15 +79,6 @@ print("Floor division:", a // b)  # rounds down to nearest integer
 print("Remainder:     ", a % b)   # modulus (remainder after division)
 print("Exponent:      ", a ** b)  # a raised to the power of b
 
-# --- Working with floats ---
-print()
-price = 9.99
-quantity = 3
-total = price * quantity
-print(f"Unit price:  \${price}")
-print(f"Quantity:    {quantity}")
-print(f"Total:       \${total}")
-
 # --- Converting between types ---
 print()
 raw = "42"
