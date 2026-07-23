@@ -65,7 +65,7 @@ print(f"Hello, {name}!")
 age = input("How old are you? ")
 print(f"You are {age} years old.")
 `,
-    "math-and-types": String.raw`# Math operations and type conversion
+    "math-and-types": `# Math operations and type conversion
 
 # --- Basic arithmetic ---
 a = 15
@@ -84,9 +84,9 @@ print()
 price = 9.99
 quantity = 3
 total = price * quantity
-print(f"Unit price:  ${price}")
+print(f"Unit price:  \${price}")
 print(f"Quantity:    {quantity}")
-print(f"Total:       ${total}")
+print(f"Total:       \${total}")
 
 # --- Converting between types ---
 print()
